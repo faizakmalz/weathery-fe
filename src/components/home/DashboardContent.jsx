@@ -1,7 +1,8 @@
-import { Box, Card, Flex, Grid, IconButton, Text } from "@chakra-ui/react";
-import { FaCloudRain, FaPlus, FaWind } from "react-icons/fa";
+import { useState } from "react"
+import { Box, Flex, Grid, Text } from "@chakra-ui/react";
+import { FaWind } from "react-icons/fa";
 import {
-  Chart,
+  Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -12,8 +13,11 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
+import CityList, { cities } from "../cities/CityList";
+import WeatherIcon from "../WeatherIcon";
+import { useLocationContext } from "@/context/LocationContext";
 
-Chart.register(
+ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
@@ -23,28 +27,37 @@ Chart.register(
   Legend
 );
 
-const cities = [
-  { city: "New York", temperature: 28 },
-  { city: "Jakarta", temperature: 32 },
-  { city: "New Delhi", temperature: 24 },
-  { city: "Surabaya", temperature: 34 },
-];
-
-const chartData = {
-  labels: cities.map((city) => city.city),
-  datasets: [
-    {
-      label: "Temperature (°C)",
-      data: cities.map((city) => city.temperature),
-      fill: false,
-      backgroundColor: "lightblue",
-      borderColor: "blue",
-    },
-  ],
-};
+//dummy
+const mainCityData = {
+  city: "Jakarta",
+  temperature: 34,
+  weather_description: "Partly Cloudy"
+}
 
 export default function DashboardContent() {
-  const navigate = useNavigate();
+  const [cities2, setCities2] = useState([]);
+  const { location, city, geoLoading, geoCodeLoading, geoError, geoCodeError, refreshLocation } = useLocationContext();
+
+  if (geoLoading || geoCodeLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (geoError || geoCodeError) {
+    return <div>Error: {geoError || geoCodeError}</div>;
+  }
+  
+  const chartData = {
+    labels: cities.map((city) => city.city),
+    datasets: [
+      {
+        label: "Temperature (°C)",
+        data: cities.map((city) => city.temperature),
+        fill: false,
+        backgroundColor: "lightblue",
+        borderColor: "blue",
+      },
+    ],
+  };
 
   return (
     <Grid
@@ -60,13 +73,16 @@ export default function DashboardContent() {
         borderRadius="lg"
         gridColumn={{ base: "span 1", md: "span 1" }}
       >
-        <Flex align="center">
-          <FaCloudRain size={50} color="lightblue" />
-          <Box ml={4}>
-            <Text fontSize="3xl" fontWeight="bold">
-              28°
+        <Flex alignItems="center" textAlign={"center"} gap={4} direction={"column"}>
+          <WeatherIcon weatherDescription={mainCityData.weather_description}/>
+          <Box>
+            <Text onClick={() => refreshLocation()} fontSize={"48px"} fontWeight={800}>
+              {mainCityData.city}
             </Text>
-            <Text fontSize="lg">Partly Cloudy</Text>
+            <Text fontSize="3xl" fontWeight="bold">
+              {mainCityData.temperature}°
+            </Text>
+            <Text fontSize="lg">{mainCityData.weather_description}</Text>
           </Box>
         </Flex>
       </Box>
@@ -127,33 +143,10 @@ export default function DashboardContent() {
           </Box>
         </Grid>
       </Box>
+    
+      <Box>
+        <CityList cities={cities2}/>
 
-      <Box
-        p={6}
-        className="bg-gray-800 bg-opacity-15"
-        borderRadius="lg"
-        gridColumn={{ base: "span 1", md: "span 1" }}
-      >
-        <Flex direction={"column"} gap={3}>
-          <Flex justify={"space-between"}>
-            <Text fontSize={30} fontWeight={700}>
-              Cities
-            </Text>
-            <IconButton onClick={() => navigate("/cities")} bg={"none"}>
-              <FaPlus />
-            </IconButton>
-          </Flex>
-          <Box spaceY={4}>
-            {cities.map((city, i) => (
-              <Flex key={i} p={4} gap={4} bg={"gray.700"} borderRadius={"lg"}>
-                <Text fontSize="lg">{city.city}</Text>
-                <Text fontSize="lg" fontWeight="bold">
-                  {city.temperature}°
-                </Text>
-              </Flex>
-            ))}
-          </Box>
-        </Flex>
       </Box>
 
       <Box
