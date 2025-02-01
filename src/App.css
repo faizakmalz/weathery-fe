@@ -2,6 +2,7 @@
 @import "tailwindcss";
 
 #root {
+  min-height: max-content;
   padding: 30px;
   font-family: "Poppins";
   background: rgb(0, 128, 177);

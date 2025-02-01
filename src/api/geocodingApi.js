@@ -1,26 +1,30 @@
-import axios from 'axios';
+import axios from "axios";
 
 const nominatimApi = axios.create({
-  baseURL: 'https://nominatim.openstreetmap.org',
+  baseURL: "https://nominatim.openstreetmap.org",
   headers: {
-    'User-Agent': 'WeatherApp/1.0'
-  }
+    "User-Agent": "WeatherApp/1.0",
+  },
 });
 
-export const getCityFromCoords = async (latitude, longitude) => {
-  const { data } = await nominatimApi.get('/reverse', {
+export const getGeoDataFromCoords = async (latitude, longitude) => {
+  const { data } = await nominatimApi.get("/reverse", {
     params: {
       lat: latitude,
       lon: longitude,
-      format: 'json'
-    }
+      format: "json",
+    },
   });
-  
-  const city = data.address.city || 
-               data.address.town || 
-               data.address.village || 
-               data.address.suburb ||
-               data.address.county;
-               
-  return city;
+
+  const city =
+    data.address.city ||
+    data.address.town ||
+    data.address.village ||
+    data.address.suburb ||
+    data.address.county;
+
+  const country = data.address.country;
+
+  const geoData = { country, city };
+  return geoData;
 };

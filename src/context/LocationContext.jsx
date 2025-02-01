@@ -5,34 +5,50 @@ import { useReverseGeocode } from "../hooks/useReverseGeoLocation";
 const LocationContext = createContext();
 
 export const LocationProvider = ({ children }) => {
-    const { location, error: geoError, loading: geoLoading, refreshLocation } = useGeolocation();
-    const { data: city, error: geoCodeError, isLoading: geoCodeLoading } = useReverseGeocode(location);
+  const {
+    location,
+    error: geoError,
+    loading: geoLoading,
+    refreshLocation,
+  } = useGeolocation();
+  const {
+    data: geoData,
+    error: geoCodeError,
+    isLoading: geoCodeLoading,
+  } = useReverseGeocode(location);
 
-    console.log('loc', location)
+  console.log("city", geoData?.city);
+  console.log("country", geoData?.country);
 
-    useEffect(() => {
-        if (city) {
-            console.log("current city", city)
-        }
-    }, [city])
-
-    const value = {
-        location,
-        geoError,
-        geoLoading,
-        geoCodeError,
-        geoCodeLoading,
-        city,
-        refreshLocation
+  useEffect(() => {
+    if (geoData?.city) {
+      console.log("current city", geoData.city);
+      console.log("current country", geoData.country);
     }
+  }, [geoData?.city]);
 
-    return (
-        <LocationContext.Provider value={value}>
-            {children}
-        </LocationContext.Provider>
-    )
-}
+  const city = geoData?.city;
+  const country = geoData?.country;
 
-export const useLocationContext = () =>{
-    return useContext(LocationContext)
-}
+  const value = {
+    location,
+    city,
+    country,
+    geoError,
+    geoLoading,
+    geoCodeError,
+    geoCodeLoading,
+    geoData,
+    refreshLocation,
+  };
+
+  return (
+    <LocationContext.Provider value={value}>
+      {children}
+    </LocationContext.Provider>
+  );
+};
+
+export const useLocationContext = () => {
+  return useContext(LocationContext);
+};

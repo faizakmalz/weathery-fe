@@ -1,42 +1,41 @@
-import { useState } from "react"
+import { useEffect, useState } from "react";
 import { Box, Flex, Grid, Text } from "@chakra-ui/react";
 import { FaWind } from "react-icons/fa";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import { useNavigate } from "react-router-dom";
-import CityList, { cities } from "../cities/CityList";
+import CityList from "../cities/CityList";
 import WeatherIcon from "../WeatherIcon";
 import { useLocationContext } from "@/context/LocationContext";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-//dummy
-const mainCityData = {
-  city: "Jakarta",
-  temperature: 34,
-  weather_description: "Partly Cloudy"
-}
+import { useForecastContext } from "@/context/ForecastContext";
+import WeatherBarChart from "./WeatherChart";
 
 export default function DashboardContent() {
-  const [cities2, setCities2] = useState([]);
-  const { location, city, geoLoading, geoCodeLoading, geoError, geoCodeError, refreshLocation } = useLocationContext();
+  const {
+    city,
+    geoLoading,
+    geoCodeLoading,
+    geoError,
+    geoCodeError,
+    refreshLocation,
+  } = useLocationContext();
+
+  const {
+    cities,
+    selectedCity,
+    selectedCityWeather,
+    isLoading,
+    error,
+    setSelectedCity,
+  } = useForecastContext();
+
+  useEffect(() => {
+    if (!selectedCity) {
+      if (city) {
+        setSelectedCity(city);
+      } else if (cities.length > 0) {
+        setSelectedCity(cities[0].name);
+      }
+    }
+    console.log("Updated selected city:", selectedCity);
+  }, [cities, selectedCity]);
 
   if (geoLoading || geoCodeLoading) {
     return <div>Loading...</div>;
@@ -45,19 +44,29 @@ export default function DashboardContent() {
   if (geoError || geoCodeError) {
     return <div>Error: {geoError || geoCodeError}</div>;
   }
-  
-  const chartData = {
-    labels: cities.map((city) => city.city),
-    datasets: [
-      {
-        label: "Temperature (°C)",
-        data: cities.map((city) => city.temperature),
-        fill: false,
-        backgroundColor: "lightblue",
-        borderColor: "blue",
-      },
-    ],
-  };
+
+  const mainForecast = selectedCityWeather
+    ? {
+        city: selectedCity || "N/A",
+        temperature: selectedCityWeather.temperature || "N/A",
+        weather_description:
+          selectedCityWeather.weather_descriptions?.[0] || "Clear",
+        wind_speed: selectedCityWeather.wind_speed || "N/A",
+        humidity: selectedCityWeather.humidity || "N/A",
+      }
+    : null;
+
+  if (!mainForecast) {
+    return <div>Loading or no weather data available...</div>;
+  }
+
+  if (isLoading) {
+    return <div>Loading weather data...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading weather data</div>;
+  }
 
   return (
     <Grid
@@ -73,16 +82,25 @@ export default function DashboardContent() {
         borderRadius="lg"
         gridColumn={{ base: "span 1", md: "span 1" }}
       >
-        <Flex alignItems="center" textAlign={"center"} gap={4} direction={"column"}>
-          <WeatherIcon weatherDescription={mainCityData.weather_description}/>
+        <Flex
+          alignItems="center"
+          textAlign={"center"}
+          gap={4}
+          direction={"column"}
+        >
+          <WeatherIcon weatherDescription={mainForecast.weather_description} />
           <Box>
-            <Text onClick={() => refreshLocation()} fontSize={"48px"} fontWeight={800}>
-              {mainCityData.city}
+            <Text
+              onClick={() => refreshLocation()}
+              fontSize={"48px"}
+              fontWeight={800}
+            >
+              {mainForecast.city}
             </Text>
             <Text fontSize="3xl" fontWeight="bold">
-              {mainCityData.temperature}°
+              {mainForecast.temperature}°
             </Text>
-            <Text fontSize="lg">{mainCityData.weather_description}</Text>
+            <Text fontSize="lg">{mainForecast.weather_description}</Text>
           </Box>
         </Flex>
       </Box>
@@ -103,7 +121,7 @@ export default function DashboardContent() {
             <Box ml={3}>
               <Text fontSize="sm">Wind</Text>
               <Text fontSize="lg" fontWeight="bold">
-                26 km/h
+                {mainForecast.wind_speed} km/h
               </Text>
             </Box>
           </Box>
@@ -120,7 +138,7 @@ export default function DashboardContent() {
             <Box ml={3}>
               <Text fontSize="sm">Humidity</Text>
               <Text fontSize="lg" fontWeight="bold">
-                65%
+                {mainForecast.humidity}%
               </Text>
             </Box>
           </Box>
@@ -135,18 +153,17 @@ export default function DashboardContent() {
               🌡️
             </Text>
             <Box ml={3}>
-              <Text fontSize="sm">Pressure</Text>
+              <Text fontSize="sm">Temperature</Text>
               <Text fontSize="lg" fontWeight="bold">
-                1012 hPa
+                {mainForecast.temperature}°
               </Text>
             </Box>
           </Box>
         </Grid>
       </Box>
-    
-      <Box>
-        <CityList cities={cities2}/>
 
+      <Box>
+        <CityList />
       </Box>
 
       <Box
@@ -159,7 +176,7 @@ export default function DashboardContent() {
           Temperature Trends
         </Text>
         <Box mt={4}>
-          <Line data={chartData} />
+          <WeatherBarChart cities={cities} />
         </Box>
       </Box>
     </Grid>

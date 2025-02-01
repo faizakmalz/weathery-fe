@@ -4,47 +4,51 @@ import { Formik, Form, Field } from "formik";
 
 const CitySchema = Yup.object().shape({
   name: Yup.string()
-    .min(2, 'City name too short')
-    .max(50, 'City name too long')
-    .required('City name is required'),
+    .min(2, "City name too short")
+    .max(50, "City name too long")
+    .required("City name is required"),
   country: Yup.string()
-    .min(2, 'Country name too short')
-    .max(50, 'Country name too long')
-    .required('Country is required'),
+    .min(2, "Country name too short")
+    .max(50, "Country name too long")
+    .required("Country is required"),
 });
 
-export default function CityInput({ addCity }) {
-  const handleSubmit = async (values, { resetForm }) => {
-    console.log('Form values:', values);
-    try {
-      const response = await addCity(values);
-      console.log('success input post', response);
-      resetForm();
-    } catch (e) {
-      console.log('error', e);
-    }
-    resetForm();
-  };
+export default function CityInput({
+  addCity,
+  editingCity,
+  onEdit,
+  resetEditing,
+}) {
+  const initialValues = editingCity || { name: "", country: "" };
 
   return (
     <>
       <Flex>
-        <Box 
-        className="bg-gray-800 bg-opacity-15 rounded-lg" 
-        minWidth={"400px"} 
-        height={"600px"}
-        p={6}
-        spaceY={5}
+        <Box
+          className="bg-gray-800 bg-opacity-5 rounded-lg"
+          minWidth={"400px"}
+          height={"600px"}
+          p={6}
+          color={"white"}
+          spaceY={5}
         >
-          <Text
-          fontSize={20}
-          fontWeight={800}
-          >Add New City</Text>
-          
+          <Text fontSize={20} fontWeight={800}>
+            Add New City
+          </Text>
+
           <Formik
-            initialValues={{ name: '', country: '' }}
+            enableReinitialize
+            initialValues={initialValues}
             validationSchema={CitySchema}
-            onSubmit={handleSubmit}
+            onSubmit={(values, { resetForm }) => {
+              if (editingCity) {
+                onEdit({ ...values, id: editingCity.id });
+              } else {
+                addCity(values);
+              }
+              resetForm();
+              resetEditing();
+            }}
           >
             {({ errors, touched }) => (
               <Form>
@@ -82,22 +86,28 @@ export default function CityInput({ addCity }) {
                       </Text>
                     ) : null}
                   </Flex>
-
-                  <Button
-                    type="submit"
-                    colorScheme="blue"
-                    mt={4}
-                    w="300px"
-                  >
-                    Add City
-                  </Button>
+                  <Flex direction={"column"}>
+                    <Button type="submit" colorScheme="blue" mt={4} w="300px">
+                      {editingCity ? "Update City" : "Add City"}
+                    </Button>
+                    {editingCity ? (
+                      <Button
+                        type="button"
+                        colorScheme="red"
+                        mt={4}
+                        w="300px"
+                        onClick={resetEditing}
+                      >
+                        Cancel
+                      </Button>
+                    ) : null}
+                  </Flex>
                 </Box>
               </Form>
             )}
           </Formik>
         </Box>
       </Flex>
-      
     </>
   );
 }
